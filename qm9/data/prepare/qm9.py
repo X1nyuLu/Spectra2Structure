@@ -27,6 +27,10 @@ def download_dataset_qm9(datadir, dataname, splits=None, calculate_thermo=True, 
 
     logging.info('Beginning download of GDB9 dataset!')
     gdb9_url_data = 'https://springernature.figshare.com/ndownloader/files/3195389'
+    
+    # Version 2, Dataset posted on 2017-06-06, 15:55 authored by Raghunathan Ramakrishnan, Pavlo Dral, Matthias Rupp, O. Anatole von Lilienfeld
+    # Link to the dataset https://springernature.figshare.com/articles/dataset/Data_for_6095_constitutional_isomers_of_C7H10O2/1057646
+
     gdb9_tar_data = join(gdb9dir, 'dsgdb9nsd.xyz.tar.bz2')
     # gdb9_tar_file = join(gdb9dir, 'dsgdb9nsd.xyz.tar.bz2')
     # gdb9_tar_data =

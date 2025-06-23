@@ -6,3 +6,7 @@ wandb/
 checkpoints/
 
 *ipynb_checkpoints
+__pycache__
+**/__pycache__
+clash/
+data/

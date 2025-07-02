@@ -55,27 +55,39 @@ def combine_datasets(datafiles):
     datasets = {split: ProcessedDataset(data, num_pts=num_pts.get(
         split, -1), included_species=all_species, subtract_thermo=False) for split, data in datasets.items()}
     
-    ls = []
-    for i, data in enumerate(datasets['train']):
-        ls.append(data)    
-    for i, data in enumerate(datasets['test']):
-        ls.append(data)
-    for i, data in enumerate(datasets['val']):
-        ls.append(data)
-    full_dataset = dummy_dataset(ls, 
+    # ls = []
+    # for i, data in enumerate(datasets['train']):
+    #     ls.append(data)    
+    # for i, data in enumerate(datasets['test']):
+    #     ls.append(data)
+    # for i, data in enumerate(datasets['val']):
+    #     ls.append(data)
+    # full_dataset = dummy_dataset(ls, 
+    #                              datasets['train'].num_species, 
+    #                              datasets['train'].max_charge)
+    # return full_dataset
+    train_dataset = dummy_dataset(datasets['train'], 
                                  datasets['train'].num_species, 
                                  datasets['train'].max_charge)
-    return full_dataset       
+
+    test_dataset = dummy_dataset(datasets['test'], 
+                                 datasets['test'].num_species, 
+                                 datasets['test'].max_charge)
+
+    valid_dataset = dummy_dataset(datasets['val'], 
+                                 datasets['val'].num_species, 
+                                 datasets['val'].max_charge)
+    return train_dataset, test_dataset, valid_dataset
 
 def id_data_map(path):
     qm9_broad_ir = pickle.load(open(path, 'rb'))
     smiles_id_map = {}
     for id, row in tqdm(qm9_broad_ir.iterrows()):
-        smiles_id_map[int(row['ID'].split('_')[1])] = row['SMILES']
+        smiles_id_map[int(row['ID'].split('_')[-1])] = row['SMILES']
         
     id_ir_map = {}
     for id, row in tqdm(qm9_broad_ir.iterrows()):
-        id_ir_map[int(row['ID'].split('_')[1])] = row['IR_Data']
+        id_ir_map[int(row['ID'].split('_')[-1])] = row['IR_Data']
 
     del qm9_broad_ir
     return smiles_id_map, id_ir_map
@@ -212,22 +224,23 @@ class ParentDataset(Dataset):
             "smiles": torch.tensor(X)
         }
         
-def CreateDataloaders( dataset, sizes = [0.8, 0.1, 0.1], batch_size=128, num_workers=16, shuffle=True):
+def CreateDataloaders( datasets, sizes = [0.8, 0.1, 0.1], batch_size=128, num_workers=16, shuffle=True):
     
     # train_size = int(len(dataset)*sizes[0])
     # test_size = int(len(dataset)*(sizes[1]))
     # val_size = len(dataset) - train_size - test_size
     # train_size = 97792
     # val_size = 12288
-    train_size = 100000
-    val_size = 20000
-    test_size = len(dataset) - train_size - val_size
+
+    # train_size = 100000
+    # val_size = 20000
+    # test_size = len(dataset) - train_size - val_size
     
-    train , test, val = torch.utils.data.random_split(dataset, [train_size, test_size, val_size])
+    # train , test, val = torch.utils.data.random_split(dataset, [train_size, test_size, val_size])
     
-    datasets = {'train':train, 
-                'test': test,
-                'val':val}
+    # datasets = {'train':train, 
+    #             'test': test,
+    #             'val':val}
     
     dataloaders = {split: DataLoader(dataset,
                                 batch_size=batch_size,
@@ -248,24 +261,56 @@ def prepare_data(config):
 
     smiles_id_map, ir_id_map = id_data_map(config['data']['qm9_broad_ir_path'])
     new_dict_norm, scaler = normalize_data(id_ir_map=ir_id_map, type=config['data']['normalization'])
-    full_dataset = combine_datasets(datafiles=config['data']['datafiles'])
-    final_dataset = ParentDataset(clip_dataset=full_dataset,
-                                  max_charge=full_dataset.max_charge,
-                                  num_species=full_dataset.num_species,
+    # full_dataset = combine_datasets(datafiles=config['data']['datafiles'])
+    # final_dataset = ParentDataset(clip_dataset=full_dataset,
+    #                               max_charge=full_dataset.max_charge,
+    #                               num_species=full_dataset.num_species,
+    #                               smiles_id_map=smiles_id_map, 
+    #                               ir_dict_norm=new_dict_norm, 
+    #                               seq_len=config['data']['seq_len'],
+    #                               vocab=vocab,
+    #                               transform=Randomizer()
+    #                               )
+    train_dataset, test_dataset, valid_dataset = combine_datasets(datafiles=config['data']['datafiles'])
+    
+    train_dataset = ParentDataset(clip_dataset=train_dataset,
+                                  max_charge=train_dataset.max_charge,
+                                  num_species=train_dataset.num_species,
                                   smiles_id_map=smiles_id_map, 
                                   ir_dict_norm=new_dict_norm, 
                                   seq_len=config['data']['seq_len'],
                                   vocab=vocab,
                                   transform=Randomizer()
                                   )
-    dataloaders = CreateDataloaders(final_dataset,
+    
+    test_dataset = ParentDataset(clip_dataset=test_dataset,
+                                  max_charge=test_dataset.max_charge,
+                                  num_species=train_dataset.num_species,
+                                  smiles_id_map=smiles_id_map, 
+                                  ir_dict_norm=new_dict_norm, 
+                                  seq_len=config['data']['seq_len'],
+                                  vocab=vocab,
+                                  transform=Randomizer()
+                                  )
+
+    valid_dataset = ParentDataset(clip_dataset=valid_dataset,
+                                  max_charge=valid_dataset.max_charge,
+                                  num_species=valid_dataset.num_species,
+                                  smiles_id_map=smiles_id_map, 
+                                  ir_dict_norm=new_dict_norm, 
+                                  seq_len=config['data']['seq_len'],
+                                  vocab=vocab,
+                                  transform=Randomizer()
+                                  )
+
+    dataloaders = CreateDataloaders({'train':train_dataset, 'test':test_dataset, 'val':valid_dataset},
                                     sizes=config['data']['splits'], 
                                     batch_size=config['data']['batch_size'],
                                     num_workers=config['data']['num_workers'],
                                     shuffle=config['data']['shuffle']
                                     )
     
-    return dataloaders, full_dataset.max_charge, full_dataset.num_species, scaler
+    return dataloaders, train_dataset.max_charge, train_dataset.num_species, scaler
 
 #====================USAGE==================#
 

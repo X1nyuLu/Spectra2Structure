@@ -6,6 +6,7 @@ from qm9 import utils as qm9_utils
 from models.vit import ViT
 from qm9.models import EGNN
 import numpy as np
+from build_vocab import WordVocab 
 
 device = torch.device("cuda")
 dtype = torch.float32

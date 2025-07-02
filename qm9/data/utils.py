@@ -115,7 +115,7 @@ def _get_species(datasets, ignore_check=False):
 
     """
     # Get a list of all species in the dataset across all splits
-    all_species = torch.cat([dataset['charges'].unique()
+    all_species = torch.cat([torch.tensor(dataset['charges']).unique()
                              for dataset in datasets.values()]).unique(sorted=True)
 
     # Find the unique list of species in each dataset.

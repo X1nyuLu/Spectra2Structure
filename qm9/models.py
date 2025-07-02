@@ -72,6 +72,8 @@ class EGNN(nn.Module):
         self.to(self.device)
 
     def forward(self, h0, x, edges, edge_attr, node_mask, edge_mask, n_nodes):
+        # print(self.embedding)
+        # print(h0.shape)
         h = self.embedding(h0)
         for i in range(0, self.n_layers):
             if self.node_attr:

@@ -98,7 +98,7 @@ class CombinedLoss(nn.Module):
             clip_loss = nt_xent_loss(mol_features, spectra_features, self.temperature)
         
         elif self.type == "default":
-            logits = logit_scale[0] *  mol_features @ spectra_features.t() 
+            logits = logit_scale.item() *  mol_features @ spectra_features.t() 
             targets = torch.diag(torch.ones(spectra_features.shape[0])).to(device)
             clip_loss = (F.cross_entropy(logits, targets) + 
                         F.cross_entropy(logits.t(), targets.t())
@@ -266,7 +266,7 @@ def train_clip(config, model, dataloaders, optimizer, loss_fn, logs, start=0, nu
             },
             step = epoch
         )
-        if epoch % 50 == 0:
+        if (epoch != 0) and (epoch % 99 == 0):
             clip_performance(config, model, dataloaders, epoch)
         elif epoch > 450 and epoch % 10 == 0:
             clip_performance(config, model, dataloaders, epoch)
@@ -294,7 +294,7 @@ def train_recon(config, model, dataloaders, optimizer, loss_fn, logs, start=0, n
             },
             step = epoch
         )
-        if epoch % 50 == 0:
+        if (epoch != 0) and (epoch % 99 == 0):
             clip_performance(config, model, dataloaders, epoch)
         elif epoch > 450 and epoch % 10 == 0:
             clip_performance(config, model, dataloaders, epoch)
@@ -321,7 +321,7 @@ def train_total(config, model, dataloaders, optimizer, loss_fn, logs, start=0, n
             },
             step = epoch
         )
-        if epoch % 50 == 0:
+        if (epoch != 0) and (epoch % 99 == 0):
             clip_performance(config, model, dataloaders, epoch)
         elif epoch > 450 and epoch % 10 == 0:
             clip_performance(config, model, dataloaders, epoch)
@@ -434,7 +434,7 @@ def calculate_decoder_accuracy( model, dataloaders, k=1):
         count = 0
         sampler = Sampler(model.module.smiles_decoder, model.module.vocab)
         
-        for i, data in tqdm(enumerate(dataloaders['val'])):
+        for i, data in tqdm(enumerate(dataloaders['val']), total=len(dataloaders['val'])):
             data = {k: v.to(device) for k, v in data.items()}
             spec_latents = model.module.forward_spec(data)
             for spec, og in zip(spec_latents, data['smiles'] ):
@@ -519,7 +519,7 @@ def clip_performance(config, model, dataloaders, epoch):
         specembeds = []
         val_ids = []
 
-        for i, data in tqdm(enumerate(dataloaders['val'])):    
+        for i, data in tqdm(enumerate(dataloaders['val']), total=len(dataloaders['val'])):    
             data = {k: v.to(device) for k, v in data.items()}
             mol_latents, spec_latents, smile_preds, logit_scale, ids = model(data)
             molembeds.append(mol_latents.detach().cpu())
@@ -536,25 +536,25 @@ def clip_performance(config, model, dataloaders, epoch):
         molembeds = []
         specembeds = []
         
-        for i, data in tqdm(enumerate(dataloaders['train'])):    
-            data = {k: v.to(device) for k, v in data.items()}
-            mol_latents, spec_latents, smile_preds, logit_scale, ids = model(data)
-            molembeds.append(mol_latents.detach().cpu())
-                # specembeds.append(spec_latents.detach().cpu())
-        del mol_latents, spec_latents, smile_preds, logit_scale, ids
+        # for i, data in tqdm(enumerate(dataloaders['train']), total=len(dataloaders['train'])):    
+        #     data = {k: v.to(device) for k, v in data.items()}
+        #     mol_latents, spec_latents, smile_preds, logit_scale, ids = model(data)
+        #     molembeds.append(mol_latents.detach().cpu())
+        #         # specembeds.append(spec_latents.detach().cpu())
+        # del mol_latents, spec_latents, smile_preds, logit_scale, ids
         
-        train_molembeds = torch.cat(molembeds, 0)
-        # train_specembeds = torch.cat(specembeds, 0)
+        # train_molembeds = torch.cat(molembeds, 0)
+        # # train_specembeds = torch.cat(specembeds, 0)
         
-        all_molembeds = torch.cat(( test_molembeds, train_molembeds), axis = 0)
-        del train_molembeds
+        # all_molembeds = torch.cat(( test_molembeds, train_molembeds), axis = 0)
+        # del train_molembeds
         
-        tops, scores = top_scores(test_specembeds, all_molembeds)
-        del all_molembeds
+        # tops, scores = top_scores(test_specembeds, all_molembeds)
+        # del all_molembeds
         
-        for k, acc in zip(tops, scores):
-            # print("Full Top {} Spec".format(k), acc)
-            wandb.log({"Full Top {} Spec".format(k): acc}, step=epoch)
+        # for k, acc in zip(tops, scores):
+        #     # print("Full Top {} Spec".format(k), acc)
+        #     wandb.log({"Full Top {} Spec".format(k): acc}, step=epoch)
             
 
         tops, scores = top_scores(test_specembeds, test_molembeds )

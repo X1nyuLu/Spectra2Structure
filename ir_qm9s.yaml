@@ -1,20 +1,20 @@
 data:
   batch_size: 400
   datafiles:
-    test: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/raw_test.pickle
-    train: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/raw_train.pickle
-    val: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/raw_val.pickle
+    test: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/qm9s_ir_test.pickle
+    train: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/qm9s_ir_train.pickle
+    val: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/qm9s_ir_eval.pickle
   max_charge: null
   normalization: minmax
   num_species: null
   num_workers: 20
-  qm9_broad_ir_path: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/qm9_broad_ir.pkl
-  seq_len: 70
+  qm9_broad_ir_path: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/qm9s_ir.pkl
+  seq_len: 100
   shuffle: true
   splits:
-  - 0.8
+  - 0.7
   - 0.1
-  - 0.1
+  - 0.2
   vocab_path: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/data/qm9_vocab.pkl
 molecule_decoder:
   hidden_size: 512
@@ -44,7 +44,7 @@ spectra_encoder:
   patch_size: 7
   use_clf_token: true
 train:
-  checkpoint_dir: checkpoints/example
+  checkpoint_dir: checkpoints/qm9s_ir
   device: cuda
   lr: 0.0001
   num_epochs: 500
@@ -55,5 +55,5 @@ train:
 wandb:
   dir: /fs-computility/ai4chem/luxinyu.p/Spectra2Structure/wandb/
   job_type: sample
-  project_name: SMEN-example
+  project_name: SMEN_qm9s_ir
   run_name: RUN_best_config
